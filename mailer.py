@@ -169,7 +169,7 @@ class Message(object):
         if attachments:
             for attachment in attachments:
                 if isinstance(attachment, basestring):
-                    self.attachments.append((attachment, None, None, None))
+                    self.attachments.append((attachment, None, None, None, None))
                 else:
                     try:
                         length = len(attachment)
@@ -177,9 +177,9 @@ class Message(object):
                         length = None
                     else:
                         if length is None or length <= 4:
-                            self.attachments.append((attachment, None, None))
+                            self.attachments.append((attachment, None, None, None, None))
                         else:
-                            self.attachments.append((tuple(attachment) + (None, None, None))[:4])
+                            self.attachments.append((tuple(attachment) + (None, None, None, None))[:4])
         self.To = To
         self.CC = CC
         self.BCC = BCC
@@ -276,12 +276,12 @@ class Message(object):
         self._set_info(msg)
         msg.preamble = self.Subject
 
-        for filename, cid, mimetype, content in self.attachments:
-            self._add_attachment(msg, filename, cid, mimetype, content)
+        for filename, cid, mimetype, content, charset in self.attachments:
+            self._add_attachment(msg, filename, cid, mimetype, content, charset)
 
         return msg.as_string()
 
-    def _add_attachment(self, outer, filename, cid, mimetype, content):
+    def _add_attachment(self, outer, filename, cid, mimetype, content, charset):
         """
         If mimetype is None, it will try to guess the mimetype
         """
@@ -300,7 +300,7 @@ class Message(object):
                 content = fp.read()
         if maintype == 'text':
             # Note: we should handle calculating the charset
-            msg = MIMEText(content, _subtype=subtype)
+            msg = MIMEText(content, _subtype=subtype, _charset=charset)
         elif maintype == 'image':
             msg = MIMEImage(content, _subtype=subtype)
         elif maintype == 'audio':
@@ -320,7 +320,7 @@ class Message(object):
             msg.add_header('Content-Disposition', 'attachment', filename=path.basename(filename))
         outer.attach(msg)
 
-    def attach(self, filename, cid=None, mimetype=None, content=None):
+    def attach(self, filename, cid=None, mimetype=None, content=None, charset=None):
         """
         Attach a file to the email. Specify the name of the file;
         Message will figure out the MIME type and load the file.
@@ -330,7 +330,7 @@ class Message(object):
         in memory.
         """
 
-        self.attachments.append((filename, cid, mimetype, content))
+        self.attachments.append((filename, cid, mimetype, content, charset))
 
 
 class Manager(threading.Thread):
