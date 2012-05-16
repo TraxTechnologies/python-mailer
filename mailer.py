@@ -28,6 +28,7 @@ Sample code:
     sender.send(message)
 
 """
+from __future__ import with_statement
 import smtplib
 import threading
 import Queue
@@ -168,14 +169,17 @@ class Message(object):
         if attachments:
             for attachment in attachments:
                 if isinstance(attachment, basestring):
-                    self.attachments.append((attachment, None, None))
+                    self.attachments.append((attachment, None, None, None))
                 else:
                     try:
-                        filename, cid = attachment
-                    except (TypeError, IndexError):
-                        self.attachments.append((attachment, None, None))
+                        length = len(attachment)
+                    except TypeError:
+                        length = None
                     else:
-                        self.attachments.append((filename, cid, None))
+                        if length is None or length <= 4:
+                            self.attachments.append((attachment, None, None))
+                        else:
+                            self.attachments.append((tuple(attachment) + (None, None, None))[:4])
         self.To = To
         self.CC = CC
         self.BCC = BCC
@@ -272,12 +276,12 @@ class Message(object):
         self._set_info(msg)
         msg.preamble = self.Subject
 
-        for filename, cid, mimetype in self.attachments:
-            self._add_attachment(msg, filename, cid, mimetype)
+        for filename, cid, mimetype, content in self.attachments:
+            self._add_attachment(msg, filename, cid, mimetype, content)
 
         return msg.as_string()
 
-    def _add_attachment(self, outer, filename, cid, mimetype):
+    def _add_attachment(self, outer, filename, cid, mimetype, content):
         """
         If mimetype is None, it will try to guess the mimetype
         """
@@ -291,20 +295,21 @@ class Message(object):
             # use a generic bag-of-bits type.
             ctype = 'application/octet-stream'
         maintype, subtype = ctype.split('/', 1)
-        fp = open(filename, 'rb')
+        if not content:
+            with open(filename, 'rb') as fp:
+                content = fp.read()
         if maintype == 'text':
             # Note: we should handle calculating the charset
-            msg = MIMEText(fp.read(), _subtype=subtype)
+            msg = MIMEText(content, _subtype=subtype)
         elif maintype == 'image':
-            msg = MIMEImage(fp.read(), _subtype=subtype)
+            msg = MIMEImage(content, _subtype=subtype)
         elif maintype == 'audio':
-            msg = MIMEAudio(fp.read(), _subtype=subtype)
+            msg = MIMEAudio(content, _subtype=subtype)
         else:
             msg = MIMEBase(maintype, subtype)
-            msg.set_payload(fp.read())
+            msg.set_payload(content)
             # Encode the payload using Base64
             encoders.encode_base64(msg)
-        fp.close()
 
         # Set the content-ID header
         if cid:
@@ -315,15 +320,17 @@ class Message(object):
             msg.add_header('Content-Disposition', 'attachment', filename=path.basename(filename))
         outer.attach(msg)
 
-    def attach(self, filename, cid=None, mimetype=None):
+    def attach(self, filename, cid=None, mimetype=None, content=None):
         """
         Attach a file to the email. Specify the name of the file;
         Message will figure out the MIME type and load the file.
 
-        Specify mimetype to set the MIME type manually.
+        Specify mimetype to set the MIME type manually. The content
+        argument take the contents of the file if they are already loaded
+        in memory.
         """
 
-        self.attachments.append((filename, cid, mimetype))
+        self.attachments.append((filename, cid, mimetype, content))
 
 
 class Manager(threading.Thread):
@@ -392,7 +399,7 @@ class Manager(threading.Thread):
                 if self.callback:
                     try:
                         self.callback(m.message_id)
-                    except:
+                    except Exception:
                         pass
 
             # endfor
