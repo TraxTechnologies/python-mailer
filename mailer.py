@@ -105,12 +105,11 @@ class Mailer(object):
 
             server.login(self._usr, self._pwd)
 
-        try:
-            len(msg)
-            for m in msg:
-                self._send(server, m)
-        except TypeError:
-            self._send(server, msg)
+        if isinstance(msg, Message):
+            msg = [msg]
+
+        for m in msg:
+            self._send(server, m)
 
         server.quit()
 
@@ -370,9 +369,7 @@ class Manager(threading.Thread):
             if msg is None:
                 break
 
-            try:
-                len(msg)
-            except TypeError:
+            if isinstance(msg, Message):
                 msg = [msg]
 
             for m in msg:
