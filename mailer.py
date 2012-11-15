@@ -38,7 +38,6 @@ import uuid
 try:
     from email import encoders
     from email.header import make_header
-    from email.message import Message
     from email.mime.audio import MIMEAudio
     from email.mime.base import MIMEBase
     from email.mime.image import MIMEImage
@@ -47,7 +46,6 @@ try:
 except ImportError:
     from email import Encoders as encoders
     from email.Header import make_header
-    from email.MIMEMessage import Message
     from email.MIMEAudio import MIMEAudio
     from email.MIMEBase import MIMEBase
     from email.MIMEImage import MIMEImage
