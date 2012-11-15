@@ -106,7 +106,7 @@ class Mailer(object):
             server.login(self._usr, self._pwd)
 
         try:
-            num_msgs = len(msg)
+            len(msg)
             for m in msg:
                 self._send(server, m)
         except TypeError:
@@ -371,9 +371,8 @@ class Manager(threading.Thread):
                 break
 
             try:
-                num_msgs = len(msg)
+                len(msg)
             except TypeError:
-                num_msgs = 1
                 msg = [msg]
 
             for m in msg:
