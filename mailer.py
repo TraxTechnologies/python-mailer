@@ -327,13 +327,13 @@ class Message(object):
 
 class Manager(threading.Thread):
     """
-    Manages the sending of email in the background
+    Manages the sending of email in the background.
 
-    you can supply it with an instance of class Mailler or pass in the same
-    parameters that you would have used to create an instance of Mailler
+    You can supply it with an instance of class Mailer or pass in the same
+    parameters that you would have used to create an instance of Mailer.
 
-    if a message was succesfully sent, self.results[msg.message_id] returns a 3
-    element tuple (True/False, err_code, err_message)
+    If a message was succesfully sent, self.results[msg.message_id] returns a 3
+    element tuple (True/False, err_code, err_message).
     """
 
     def __init__(self, mailer=None, callback=None, **kwargs):
