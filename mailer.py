@@ -65,6 +65,7 @@ __author__ = "Ryan Ginstrom"
 __license__ = "MIT"
 __description__ = "A module to send email simply in Python"
 
+
 class Mailer(object):
     """
     Represents an SMTP connection.
@@ -143,6 +144,7 @@ class Mailer(object):
         you = to + cc + bcc
         server.sendmail(me, you, msg.as_string())
 
+
 class Message(object):
     """
     Represents an email message.
@@ -207,7 +209,7 @@ class Message(object):
         if not self.Html:
             msg = MIMEText(self.Body, 'plain', self.charset)
         else:
-            msg  = self._with_html()
+            msg = self._with_html()
 
         self._set_info(msg)
         return msg.as_string()
