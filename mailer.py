@@ -39,7 +39,6 @@ import uuid
 try:
     from email import encoders
     from email.header import make_header
-    from email.message import Message
     from email.mime.audio import MIMEAudio
     from email.mime.base import MIMEBase
     from email.mime.image import MIMEImage
@@ -48,7 +47,6 @@ try:
 except ImportError:
     from email import Encoders as encoders
     from email.Header import make_header
-    from email.MIMEMessage import Message
     from email.MIMEAudio import MIMEAudio
     from email.MIMEBase import MIMEBase
     from email.MIMEImage import MIMEImage
@@ -65,6 +63,7 @@ __version__ = "0.7"
 __author__ = "Ryan Ginstrom"
 __license__ = "MIT"
 __description__ = "A module to send email simply in Python"
+
 
 class Mailer(object):
     """
@@ -107,12 +106,11 @@ class Mailer(object):
 
             server.login(self._usr, self._pwd)
 
-        try:
-            num_msgs = len(msg)
-            for m in msg:
-                self._send(server, m)
-        except TypeError:
-            self._send(server, msg)
+        if isinstance(msg, Message):
+            msg = [msg]
+
+        for m in msg:
+            self._send(server, m)
 
         server.quit()
 
@@ -143,6 +141,7 @@ class Mailer(object):
 
         you = to + cc + bcc
         server.sendmail(me, you, msg.as_string())
+
 
 class Message(object):
     """
@@ -211,7 +210,7 @@ class Message(object):
         if not self.Html:
             msg = MIMEText(self.Body, 'plain', self.charset)
         else:
-            msg  = self._with_html()
+            msg = self._with_html()
 
         self._set_info(msg)
         return msg.as_string()
@@ -335,13 +334,13 @@ class Message(object):
 
 class Manager(threading.Thread):
     """
-    Manages the sending of email in the background
+    Manages the sending of email in the background.
 
-    you can supply it with an instance of class Mailler or pass in the same
-    parameters that you would have used to create an instance of Mailler
+    You can supply it with an instance of class Mailer or pass in the same
+    parameters that you would have used to create an instance of Mailer.
 
-    if a message was succesfully sent, self.results[msg.message_id] returns a 3
-    element tuple (True/False, err_code, err_message)
+    If a message was succesfully sent, self.results[msg.message_id] returns a 3
+    element tuple (True/False, err_code, err_message).
     """
 
     def __init__(self, mailer=None, callback=None, **kwargs):
@@ -377,10 +376,7 @@ class Manager(threading.Thread):
             if msg is None:
                 break
 
-            try:
-                num_msgs = len(msg)
-            except TypeError:
-                num_msgs = 1
+            if isinstance(msg, Message):
                 msg = [msg]
 
             for m in msg:
