@@ -232,7 +232,10 @@ class Message(object):
         if self.charset == 'us-ascii':
             msg['Subject'] = self.Subject
         else:
-            subject = unicode(self.Subject, self.charset)
+            if isinstance(self.Subject, unicode):
+                subject = self.Subject
+            else:
+                subject = unicode(self.Subject, self.charset)
             msg['Subject'] = str(make_header([(subject, self.charset)]))
 
         msg['From'] = self.From
