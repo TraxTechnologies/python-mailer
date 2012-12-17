@@ -7,7 +7,7 @@ if sys.version_info >= (3,0):
 
 setup (
     name = 'mailer',
-    version = "0.7",
+    version = "0.7.1",
     description = "A module to send email simply in Python",
     author = "Ryan Ginstrom",
     url = "https://bitbucket.org/ginstrom/mailer",
