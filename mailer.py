@@ -191,6 +191,9 @@ class Message(object):
         self.Date = Date or time.strftime("%a, %d %b %Y %H:%M:%S %z", time.gmtime())
         self.charset = charset or 'us-ascii'
 
+        if isinstance(Body, unicode):
+            self.Body = self.Body.encode(self.charset)
+
         self.message_id = self.make_key()
 
     def make_key(self):
