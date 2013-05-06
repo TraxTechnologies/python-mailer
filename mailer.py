@@ -162,7 +162,7 @@ class Message(object):
     """
 
     def __init__(self, To=None, From=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
-                 Date=None, attachments=None, charset=None):
+                 Date=None, attachments=None, charset=None, CC=None, BCC=None):
         self.attachments = []
         if attachments:
             for attachment in attachments:
@@ -285,6 +285,9 @@ class Message(object):
             encoding = None
         else:
             ctype, encoding = mimetypes.guess_type(filename)
+        else:
+            ctype = mimetype
+            encoding = None
         if ctype is None or encoding is not None:
             # No guess could be made, or the file is encoded (compressed), so
             # use a generic bag-of-bits type.
