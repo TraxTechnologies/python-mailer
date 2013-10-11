@@ -170,7 +170,7 @@ class Message(object):
     """
 
     def __init__(self, To=None, From=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
-                 Date=None, attachments=None, charset=None):
+                 Date=None, attachments=None, charset=None, headers=None):
         self.attachments = []
         if attachments:
             for attachment in attachments:
@@ -197,11 +197,15 @@ class Message(object):
         self.Html = Html
         self.Date = Date or time.strftime("%a, %d %b %Y %H:%M:%S %z", time.gmtime())
         self.charset = charset or 'us-ascii'
+        self.Headers = headers or {}
 
         self.message_id = self.make_key()
 
     def make_key(self):
         return str(uuid.uuid4())
+
+    def header(self, key, value):
+        self.Headers[key] = value
 
     def as_string(self):
         """Get the email as a string to send in the mailer"""
@@ -256,6 +260,11 @@ class Message(object):
             else:
                 self.CC = list(self.CC)
                 msg['CC'] = ", ".join(self.CC)
+
+        if self.Headers:
+            for key, value in self.Headers.items():
+                msg[key] = str(value).encode(self.charset)
+
 
         msg['Date'] = self.Date
 
