@@ -255,11 +255,11 @@ class Message(object):
     def _set_info(self, msg):
         if self.charset == 'us-ascii':
             msg['Subject'] = self.Subject
+            msg['From'] = self.From
         else:
             subject = unicode(self.Subject, self.charset)
             msg['Subject'] = str(make_header([(subject, self.charset)]))
-
-        msg['From'] = self.From
+            msg['From'] = str(make_header([(unicode(self.From).encode(self.charset), self.charset)]))
 
         if isinstance(self.To, basestring):
             msg['To'] = self.To
