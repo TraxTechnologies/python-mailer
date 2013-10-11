@@ -163,7 +163,7 @@ class Message(object):
     """
 
     def __init__(self, To=None, From=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
-                 Date=None, attachments=None, charset=None, CC=None, BCC=None):
+                 Date=None, attachments=None, charset=None):
         self.attachments = []
         if attachments:
             for attachment in attachments:
