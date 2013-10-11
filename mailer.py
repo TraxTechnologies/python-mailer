@@ -293,17 +293,17 @@ class Message(object):
             encoding = None
         else:
             ctype, encoding = mimetypes.guess_type(filename)
-        else:
-            ctype = mimetype
-            encoding = None
+
         if ctype is None or encoding is not None:
             # No guess could be made, or the file is encoded (compressed), so
             # use a generic bag-of-bits type.
             ctype = 'application/octet-stream'
+
         maintype, subtype = ctype.split('/', 1)
         if not content:
             with open(filename, 'rb') as fp:
                 content = fp.read()
+
         if maintype == 'text':
             # Note: we should handle calculating the charset
             msg = MIMEText(content, _subtype=subtype, _charset=charset)
@@ -324,6 +324,7 @@ class Message(object):
         else:
             # Set the filename parameter
             msg.add_header('Content-Disposition', 'attachment', filename=path.basename(filename))
+            
         outer.attach(msg)
 
     def attach(self, filename, cid=None, mimetype=None, content=None, charset=None):
