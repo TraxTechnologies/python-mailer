@@ -169,9 +169,21 @@ class Message(object):
     Send using the Mailer class.
     """
 
-    def __init__(self, To=None, From=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
-                 Date=None, attachments=None, charset=None, headers=None):
+    def __init__(self, **kwargs):
+        """
+        Parameters and default values (parameter names are case insensitive):
+            To=None, From=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
+            Date=None, Attachments=None, Charset=None, Headers=None
+        """
+
+        # extract  parameters and convert names to lowercase
+        params = {}
+        for i in kwargs:
+            params[i.lower()] = kwargs[i]
+
+        # preprocess attachments
         self.attachments = []
+        attachments = params.get('attachments', None)
         if attachments:
             for attachment in attachments:
                 if isinstance(attachment, basestring):
@@ -186,20 +198,21 @@ class Message(object):
                             self.attachments.append((attachment, None, None, None, None))
                         else:
                             self.attachments.append((tuple(attachment) + (None, None, None, None))[:4])
-        self.To = To
-        self.CC = CC
-        self.BCC = BCC
-        """string or iterable"""
-        self.From = From
-        """string"""
-        self.Subject = Subject
-        self.Body = Body
-        self.Html = Html
-        self.Date = Date or time.strftime("%a, %d %b %Y %H:%M:%S %z", time.gmtime())
-        self.charset = charset or 'us-ascii'
-        self.Headers = headers or {}
+
+
+        self.To         = params.get('to', None)
+        self.CC         = params.get('cc', None)
+        self.BCC        = params.get('bcc', None)
+        self.From       = params.get('from', None) # string or iterable
+        self.Subject    = params.get('subject', None) # string
+        self.Body       = params.get('body', None)
+        self.Html       = params.get('html', None)
+        self.Date       = params.get('date', time.strftime("%a, %d %b %Y %H:%M:%S %z", time.gmtime()))
+        self.charset    = params.get('charset', 'us-ascii')
+        self.Headers    = params.get('headers', {})
 
         self.message_id = self.make_key()
+
 
     def make_key(self):
         return str(uuid.uuid4())
