@@ -72,13 +72,14 @@ class Mailer(object):
     Use login() to log in with a username and password.
     """
 
-    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None, use_ssl=False):
-        self.host = host
-        self.port = port
-        self.use_tls = use_tls
-        self.use_ssl = use_ssl
-        self._usr = usr
-        self._pwd = pwd
+    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None, use_ssl=False, use_plain_auth=False):
+        self.host           = host
+        self.port           = port
+        self.use_tls        = use_tls
+        self.use_ssl        = use_ssl
+        self.use_plain_auth = use_plain_auth
+        self._usr           = usr
+        self._pwd           = pwd
 
     def login(self, usr, pwd):
         self._usr = usr
@@ -103,6 +104,9 @@ class Mailer(object):
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
+
+            if self.use_plain_auth is True: 
+                server.esmtp_features["auth"] = "LOGIN PLAIN"
 
             server.login(self._usr, self._pwd)
 
