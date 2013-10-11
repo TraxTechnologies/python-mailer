@@ -85,7 +85,7 @@ class Mailer(object):
         self._usr = usr
         self._pwd = pwd
 
-    def send(self, msg):
+    def send(self, msg, debug=False):
         """
         Send one message or a sequence of messages.
 
@@ -98,6 +98,9 @@ class Mailer(object):
             server = smtplib.SMTP_SSL(self.host, self.port)
         else:
             server = smtplib.SMTP(self.host, self.port)
+
+        if debug:
+            server.set_debuglevel(1)
 
         if self._usr and self._pwd:
             if self.use_tls is True:
@@ -324,7 +327,7 @@ class Message(object):
         else:
             # Set the filename parameter
             msg.add_header('Content-Disposition', 'attachment', filename=path.basename(filename))
-            
+
         outer.attach(msg)
 
     def attach(self, filename, cid=None, mimetype=None, content=None, charset=None):
