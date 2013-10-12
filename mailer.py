@@ -256,10 +256,12 @@ class Message(object):
         if self.charset == 'us-ascii':
             msg['Subject'] = self.Subject
             msg['From'] = self.From
+            
         else:
             subject = unicode(self.Subject, self.charset)
             msg['Subject'] = str(make_header([(subject, self.charset)]))
             msg['From'] = str(make_header([(unicode(self.From).encode(self.charset), self.charset)]))
+
 
         if isinstance(self.To, basestring):
             msg['To'] = self.To
@@ -273,6 +275,15 @@ class Message(object):
             else:
                 self.CC = list(self.CC)
                 msg['CC'] = ", ".join(self.CC)
+
+
+        if self.BCC:
+            if isinstance(self.BCC, basestring):
+                msg['BCC'] = self.BCC
+            else:
+                self.BCC = list(self.BCC)
+                msg['BCC'] = ", ".join(self.BCC)
+
 
         if self.Headers:
             for key, value in self.Headers.items():
