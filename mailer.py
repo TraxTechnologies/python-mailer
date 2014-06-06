@@ -20,6 +20,7 @@ Sample code:
     message = mailer.Message()
     message.From = "me@example.com"
     message.To = "you@example.com"
+    message.RTo = "you@example.com"
     message.Subject = "My Vacation"
     message.Body = open("letter.txt", "rb").read()
     message.attach("picture.jpg")
@@ -146,7 +147,14 @@ class Mailer(object):
             else:
                 bcc = list(msg.BCC)
 
-        you = to + cc + bcc
+        rto = []
+        if msg.RTo:
+            if isinstance(msg.RTo, basestring):
+                rto = [msg.RTo]
+            else:
+                rto = list(msg.RTo)
+
+        you = to + cc + bcc + rto
         server.sendmail(me, you, msg.as_string())
 
 
@@ -154,7 +162,7 @@ class Message(object):
     """
     Represents an email message.
 
-    Set the To, From, Subject, and Body attributes as plain-text strings.
+    Set the To, From, Reply-To, Subject, and Body attributes as plain-text strings.
     Optionally, set the Html attribute to send an HTML email, or use the
     attach() method to attach files.
 
@@ -172,7 +180,7 @@ class Message(object):
     def __init__(self, **kwargs):
         """
         Parameters and default values (parameter names are case insensitive):
-            To=None, From=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
+            To=None, From=None, RTo=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
             Date=None, Attachments=None, Charset=None, Headers=None
         """
 
@@ -201,6 +209,7 @@ class Message(object):
 
 
         self.To         = params.get('to', None)
+        self.RTo        = params.get('rto', None)
         self.CC         = params.get('cc', None)
         self.BCC        = params.get('bcc', None)
         self.From       = params.get('from', None) # string or iterable
@@ -268,6 +277,12 @@ class Message(object):
         else:
             self.To = list(self.To)
             msg['To'] = ", ".join(self.To)
+
+        if isinstance(self.RTo, basestring):
+            msg.add_header('reply-to', self.RTo)
+        else:
+            self.RTo = list(self.RTo)
+            msg.add_header('reply-to', ", ".join(self.RTo))
 
         if self.CC:
             if isinstance(self.CC, basestring):
