@@ -216,7 +216,7 @@ class Message(object):
         self.CC         = params.get('cc', None)
         self.BCC        = params.get('bcc', None)
         self.From       = params.get('from', None) # string or iterable
-        self.Subject    = params.get('subject', None) # string
+        self.Subject    = params.get('subject', u'') # string
         self.Body       = params.get('body', None)
         self.Html       = params.get('html', None)
         self.Date       = params.get('date', time.strftime("%a, %d %b %Y %H:%M:%S %z", time.gmtime()))
