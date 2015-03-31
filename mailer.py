@@ -31,6 +31,7 @@ Sample code:
 """
 from __future__ import with_statement
 import smtplib
+import socket
 import threading
 import Queue
 import uuid
@@ -73,7 +74,8 @@ class Mailer(object):
     Use login() to log in with a username and password.
     """
 
-    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None, use_ssl=False, use_plain_auth=False):
+    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None, use_ssl=False, use_plain_auth=False,
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self.host           = host
         self.port           = port
         self.use_tls        = use_tls
@@ -81,6 +83,7 @@ class Mailer(object):
         self.use_plain_auth = use_plain_auth
         self._usr           = usr
         self._pwd           = pwd
+        self.timeout        = timeout
 
     def login(self, usr, pwd):
         self._usr = usr
@@ -96,9 +99,9 @@ class Mailer(object):
         mailer.send([msg1, msg2, msg3])
         """
         if self.use_ssl:
-            server = smtplib.SMTP_SSL(self.host, self.port)
+            server = smtplib.SMTP_SSL(self.host, self.port, timeout=self.timeout)
         else:
-            server = smtplib.SMTP(self.host, self.port)
+            server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)
 
         if debug:
             server.set_debuglevel(1)
@@ -109,7 +112,7 @@ class Mailer(object):
                 server.starttls()
                 server.ehlo()
 
-            if self.use_plain_auth is True: 
+            if self.use_plain_auth is True:
                 server.esmtp_features["auth"] = "LOGIN PLAIN"
 
             server.login(self._usr, self._pwd)
@@ -268,7 +271,7 @@ class Message(object):
         if self.charset == 'us-ascii':
             msg['Subject'] = self.Subject
             msg['From'] = self.From
-            
+
         else:
             if isinstance(self.Subject, unicode):
                 subject = self.Subject
