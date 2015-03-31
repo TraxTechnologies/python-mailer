@@ -20,6 +20,7 @@ Sample code:
     message = mailer.Message()
     message.From = "me@example.com"
     message.To = "you@example.com"
+    message.RTo = "you@example.com"
     message.Subject = "My Vacation"
     message.Body = open("letter.txt", "rb").read()
     message.attach("picture.jpg")
@@ -72,19 +73,20 @@ class Mailer(object):
     Use login() to log in with a username and password.
     """
 
-    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None, use_ssl=False):
-        self.host = host
-        self.port = port
-        self.use_tls = use_tls
-        self.use_ssl = use_ssl
-        self._usr = usr
-        self._pwd = pwd
+    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None, use_ssl=False, use_plain_auth=False):
+        self.host           = host
+        self.port           = port
+        self.use_tls        = use_tls
+        self.use_ssl        = use_ssl
+        self.use_plain_auth = use_plain_auth
+        self._usr           = usr
+        self._pwd           = pwd
 
     def login(self, usr, pwd):
         self._usr = usr
         self._pwd = pwd
 
-    def send(self, msg):
+    def send(self, msg, debug=False):
         """
         Send one message or a sequence of messages.
 
@@ -98,11 +100,17 @@ class Mailer(object):
         else:
             server = smtplib.SMTP(self.host, self.port)
 
+        if debug:
+            server.set_debuglevel(1)
+
         if self._usr and self._pwd:
             if self.use_tls is True:
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
+
+            if self.use_plain_auth is True: 
+                server.esmtp_features["auth"] = "LOGIN PLAIN"
 
             server.login(self._usr, self._pwd)
 
@@ -139,7 +147,14 @@ class Mailer(object):
             else:
                 bcc = list(msg.BCC)
 
-        you = to + cc + bcc
+        rto = []
+        if msg.RTo:
+            if isinstance(msg.RTo, basestring):
+                rto = [msg.RTo]
+            else:
+                rto = list(msg.RTo)
+
+        you = to + cc + bcc + rto
         server.sendmail(me, you, msg.as_string())
 
 
@@ -147,7 +162,7 @@ class Message(object):
     """
     Represents an email message.
 
-    Set the To, From, Subject, and Body attributes as plain-text strings.
+    Set the To, From, Reply-To, Subject, and Body attributes as plain-text strings.
     Optionally, set the Html attribute to send an HTML email, or use the
     attach() method to attach files.
 
@@ -162,9 +177,21 @@ class Message(object):
     Send using the Mailer class.
     """
 
-    def __init__(self, To=None, From=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
-                 Date=None, attachments=None, charset=None):
+    def __init__(self, **kwargs):
+        """
+        Parameters and default values (parameter names are case insensitive):
+            To=None, From=None, RTo=None, CC=None, BCC=None, Subject=None, Body=None, Html=None,
+            Date=None, Attachments=None, Charset=None, Headers=None
+        """
+
+        # extract  parameters and convert names to lowercase
+        params = {}
+        for i in kwargs:
+            params[i.lower()] = kwargs[i]
+
+        # preprocess attachments
         self.attachments = []
+        attachments = params.get('attachments', None)
         if attachments:
             for attachment in attachments:
                 if isinstance(attachment, basestring):
@@ -179,25 +206,31 @@ class Message(object):
                             self.attachments.append((attachment, None, None, None, None))
                         else:
                             self.attachments.append((tuple(attachment) + (None, None, None, None))[:4])
-        self.To = To
-        self.CC = CC
-        self.BCC = BCC
-        """string or iterable"""
-        self.From = From
-        """string"""
-        self.Subject = Subject
-        self.Body = Body
-        self.Html = Html
-        self.Date = Date or time.strftime("%a, %d %b %Y %H:%M:%S %z", time.gmtime())
-        self.charset = charset or 'us-ascii'
+
+
+        self.To         = params.get('to', None)
+        self.RTo        = params.get('rto', None)
+        self.CC         = params.get('cc', None)
+        self.BCC        = params.get('bcc', None)
+        self.From       = params.get('from', None) # string or iterable
+        self.Subject    = params.get('subject', None) # string
+        self.Body       = params.get('body', None)
+        self.Html       = params.get('html', None)
+        self.Date       = params.get('date', time.strftime("%a, %d %b %Y %H:%M:%S %z", time.gmtime()))
+        self.charset    = params.get('charset', 'us-ascii')
+        self.Headers    = params.get('headers', {})
 
         if isinstance(Body, unicode):
             self.Body = self.Body.encode(self.charset)
 
         self.message_id = self.make_key()
 
+
     def make_key(self):
         return str(uuid.uuid4())
+
+    def header(self, key, value):
+        self.Headers[key] = value
 
     def as_string(self):
         """Get the email as a string to send in the mailer"""
@@ -234,14 +267,16 @@ class Message(object):
     def _set_info(self, msg):
         if self.charset == 'us-ascii':
             msg['Subject'] = self.Subject
+            msg['From'] = self.From
+            
         else:
             if isinstance(self.Subject, unicode):
                 subject = self.Subject
             else:
                 subject = unicode(self.Subject, self.charset)
             msg['Subject'] = str(make_header([(subject, self.charset)]))
+            msg['From'] = str(make_header([(unicode(self.From).encode(self.charset), self.charset)]))
 
-        msg['From'] = self.From
 
         if isinstance(self.To, basestring):
             msg['To'] = self.To
@@ -249,12 +284,32 @@ class Message(object):
             self.To = list(self.To)
             msg['To'] = ", ".join(self.To)
 
+        if isinstance(self.RTo, basestring):
+            msg.add_header('reply-to', self.RTo)
+        else:
+            self.RTo = list(self.RTo)
+            msg.add_header('reply-to', ", ".join(self.RTo))
+
         if self.CC:
             if isinstance(self.CC, basestring):
                 msg['CC'] = self.CC
             else:
                 self.CC = list(self.CC)
                 msg['CC'] = ", ".join(self.CC)
+
+
+        if self.BCC:
+            if isinstance(self.BCC, basestring):
+                msg['BCC'] = self.BCC
+            else:
+                self.BCC = list(self.BCC)
+                msg['BCC'] = ", ".join(self.BCC)
+
+
+        if self.Headers:
+            for key, value in self.Headers.items():
+                msg[key] = str(value).encode(self.charset)
+
 
         msg['Date'] = self.Date
 
@@ -295,14 +350,17 @@ class Message(object):
             encoding = None
         else:
             ctype, encoding = mimetypes.guess_type(filename)
+
         if ctype is None or encoding is not None:
             # No guess could be made, or the file is encoded (compressed), so
             # use a generic bag-of-bits type.
             ctype = 'application/octet-stream'
+
         maintype, subtype = ctype.split('/', 1)
         if not content:
             with open(filename, 'rb') as fp:
                 content = fp.read()
+
         if maintype == 'text':
             # Note: we should handle calculating the charset
             msg = MIMEText(content, _subtype=subtype, _charset=charset)
@@ -323,6 +381,7 @@ class Message(object):
         else:
             # Set the filename parameter
             msg.add_header('Content-Disposition', 'attachment', filename=path.basename(filename))
+
         outer.attach(msg)
 
     def attach(self, filename, cid=None, mimetype=None, content=None, charset=None):
