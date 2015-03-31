@@ -223,7 +223,7 @@ class Message(object):
         self.charset    = params.get('charset', 'us-ascii')
         self.Headers    = params.get('headers', {})
 
-        if isinstance(Body, unicode):
+        if isinstance(self.Body, unicode):
             self.Body = self.Body.encode(self.charset)
 
         self.message_id = self.make_key()
@@ -287,11 +287,12 @@ class Message(object):
             self.To = list(self.To)
             msg['To'] = ", ".join(self.To)
 
-        if isinstance(self.RTo, basestring):
-            msg.add_header('reply-to', self.RTo)
-        else:
-            self.RTo = list(self.RTo)
-            msg.add_header('reply-to', ", ".join(self.RTo))
+        if self.RTo:
+            if isinstance(self.RTo, basestring):
+                msg.add_header('reply-to', self.RTo)
+            else:
+                self.RTo = list(self.RTo)
+                msg.add_header('reply-to', ", ".join(self.RTo))
 
         if self.CC:
             if isinstance(self.CC, basestring):
