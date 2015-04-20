@@ -1,13 +1,11 @@
 #coding: UTF8
 """
-Design Patterns in Python
-listing 1 for Chapter 3
-
+Sample usage
 """
 
 from mailer import Mailer
 from mailer import Message
-import urllib
+
 
 msg1 = Message(From="translation@ginstrom.com",
                   To=["translation@ginstrom.com", "software@ginstrom.com"],
