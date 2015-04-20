@@ -157,7 +157,7 @@ class Mailer(object):
             else:
                 rto = list(msg.RTo)
 
-        you = to + cc + bcc + rto
+        you = to + cc + bcc
         server.sendmail(me, you, msg.as_string())
 
 
@@ -278,7 +278,12 @@ class Message(object):
             else:
                 subject = unicode(self.Subject, self.charset)
             msg['Subject'] = str(make_header([(subject, self.charset)]))
-            msg['From'] = str(make_header([(unicode(self.From).encode(self.charset), self.charset)]))
+
+            if isinstance(self.From, unicode):
+                from_ = self.From
+            else:
+                from_ = unicode(self.From, self.charset)
+            msg['From'] = str(make_header([(from_, self.charset)]))
 
 
         if isinstance(self.To, basestring):
