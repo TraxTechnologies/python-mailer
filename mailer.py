@@ -30,6 +30,7 @@ Sample code:
 
 """
 from __future__ import with_statement
+import sys
 import smtplib
 import socket
 import threading
@@ -65,6 +66,7 @@ __version__ = "0.7"
 __author__ = "Ryan Ginstrom"
 __license__ = "MIT"
 __description__ = "A module to send email simply in Python"
+PY3 = sys.version_info >= (3,)
 
 
 class Mailer(object):
@@ -317,7 +319,10 @@ class Message(object):
 
         if self.Headers:
             for key, value in self.Headers.items():
-                msg[key] = str(value).encode(self.charset)
+                if PY3:
+                    msg[key] = value
+                else:
+                    msg[key] = str(value).encode(self.charset)
 
 
         msg['Date'] = self.Date
